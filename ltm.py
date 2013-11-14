@@ -11,7 +11,8 @@ class ltm:
         self.NODE_THRESHOLD = 0.5
         self.edge_to_weight_dict = {}
         self.node_to_incoming_edge_dict = {}
-        self.node_to_activation_count_dict = {}    
+        self.node_to_activation_count_dict = {}
+        self.node_to_activated_nodes_set_dict = {} 
         self.total_activated_nodes_set = set()
         self.top_nodes_with_activation_count = collections.OrderedDict() # Final data structure which hold the results
 
@@ -64,8 +65,11 @@ class ltm:
             self.post_processing()
             self.node_to_activation_count_dict = {}
             self.node_to_activated_nodes_set_dict = {} 
-
-
+            
+        logging.info("Final results are : ")
+        logging.info(self.top_nodes_with_activation_count)
+        print self.top_nodes_with_activation_count
+        
     def find_activation_count(self, node):
         
         #Returns the count of nodes which can be activated by the given node
@@ -105,7 +109,7 @@ class ltm:
         best_node, activation_count = sorted_x[0]
         self.top_nodes_with_activation_count[best_node] = activation_count
         self.total_activated_nodes_set.union(self.node_to_activated_nodes_set_dict.get(best_node, set()))
-        self.nodes_list.pop(best_node)
+        self.nodes_list.remove(best_node)
 
 if __name__ == "__main__":
     ltm_obj = ltm()
