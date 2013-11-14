@@ -5,19 +5,15 @@ import operator, collections
 class ltm:
 
     def __init__(self):
-            
         self.dir_name = "input"
         self.file_name = "amazon0302.txt"
         self.logger_file = "ltm.log"
-
         self.NODE_THRESHOLD = 0.5
-
         self.edge_to_weight_dict = {}
         self.node_to_incoming_edge_dict = {}
         self.node_to_activation_count_dict = {}    
         self.total_activated_nodes_set = set()
-
-        self.top_nodes_with_activation_count = collections.OrderedDict()
+        self.top_nodes_with_activation_count = collections.OrderedDict() # Final data structure which hold the results
 
     def run_main(self):
         self.initialize_logger()
@@ -41,8 +37,10 @@ class ltm:
     def close_file(self):
         self.fd.close()
 
-
-    def pre_processing(self):   
+    def pre_processing(self):
+        
+        #One pass, to find edge weight of all edges and inverse list for every node which has incoming nodes information
+           
         for node in self.nodes_list:
             neighbors_list = self.G.neighbors(node)
             if len(neighbors_list) == 0:
@@ -53,33 +51,32 @@ class ltm:
                 self.edge_to_weight_dict[edge_name] = edge_weight
                 self.node_to_incoming_edge_dict.setdefault(neighbor, []).append(edge_name)        
 
+
     def run(self):
         for x in range(10): #Running for K=10 times. 
-
-            for node in self.nodes_list: #For every iteration, finds the best node. 
+            for node in self.nodes_list: #For every iteration, finds the best node and stores it 
                 if not node:
                     continue
                 logging.info("Finding  activation count for %s" % (node))
                 self.activated_node_set = set()
                 count = self.find_activation_count(node) 
                 self.node_to_activation_count_dict[node] = count
-                self.post_processing()
-                self.node_to_activation_count_dict = {}
-                self.node_to_activated_nodes_set_dict = {} 
+            self.post_processing()
+            self.node_to_activation_count_dict = {}
+            self.node_to_activated_nodes_set_dict = {} 
+
 
     def find_activation_count(self, node):
         
+        #Returns the count of nodes which can be activated by the given node
         activation_count = 0
         neighbors_list = self.G.neighbors(node)
-    
         for neighbor in neighbors_list:
             is_activated = self.check_if_activated(neighbor)
-
             if is_activated and neighbor not in self.activated_node_set and neighbor not in self.total_activated_nodes_set:
                 self.activated_node_set.add(neighbor)
                 activation_count += 1
                 neighbors_list.extend(self.G.neighbors(neighbor))        
-
         self.node_to_activated_nodes_set_dict[node] = self.activated_node_set
         return activation_count
 
@@ -87,28 +84,26 @@ class ltm:
     def check_if_activated(self, node):
 
         total_edge_weight = 0
-
         incoming_edge_list = self.node_to_incoming_edge_dict.get(node)
         if not incoming_edge_list:
             return False
-
         for edge in incoming_edge_list:
             edge_weight = self.edge_to_weight_dict.get(edge)
             if not edge_weight:
                 continue
-
             total_edge_weight += edge_weight
-         
         if total_edge_weight >= self.NODE_THRESHOLD:
             return True
-
         return False
 
+
     def post_processing(self):
+
+        #Called k times, which stores the top node information obtained in every iteration        
+
         sorted_x = sorted(self.node_to_activation_count_dict.iteritems(), key=operator.itemgetter(1), reverse=True)  
         best_node, activation_count = sorted_x[0]
         self.top_nodes_with_activation_count[best_node] = activation_count
-
         self.total_activated_nodes_set.union(self.node_to_activated_nodes_set_dict.get(best_node, set()))
         self.nodes_list.pop(best_node)
 
