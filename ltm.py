@@ -54,21 +54,26 @@ class ltm:
             if not node:
                 continue
             logging.info("Finding  activation count for %s" % (node))
+            self.activated_node_set = set()
             count = self.find_activation_count(node) 
             self.node_to_activation_count_dict[node] = count 
 
     def find_activation_count(self, node):
+        
         activation_count = 0
         neighbors_list = self.G.neighbors(node)
-
-        for neighbor in neighbors_list:
-            is_activated = self.check_if_activated(neighbor)            
-
-            if is_activated:
-                activation_count = 1+self.find_activation_count(neighbor)              
     
-        return activation_count 
-        
+        for neighbor in neighbors_list:
+            is_activated = self.check_if_activated(neighbor)
+
+            if is_activated and neighbor not in self.activated_node_set:
+                self.activated_node_set.add(neighbor)
+                activation_count += 1
+                neighbors_list.extend(self.G.neighbors(neighbor))        
+
+        return activation_count
+
+     
     def check_if_activated(self, node):
 
         total_edge_weight = 0
